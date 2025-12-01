@@ -62,6 +62,8 @@ uvicorn app:app --reload
 
 4.	Open index.html in a browser to access the frontend.
 
+---
+
 ## 📌 Usage
   - Store a Song
   	1.	Go to the Store Song tab.
@@ -80,6 +82,8 @@ uvicorn app:app --reload
   	3.	The app streams audio in real-time and shows results as toast notifications.
   	4.	Click the 🎤 button again to stop streaming.
 
+---
+
 ## 📁 Project Structure
   ```bash
   /Shabook
@@ -91,6 +95,8 @@ uvicorn app:app --reload
     └── README.md          # This file
   ```
 
+---
+
 ## 💡 Example Response
   Matching results are returned as a list of tuples:
   ```bash
@@ -99,12 +105,16 @@ uvicorn app:app --reload
   
   Where the first element is the song name and the second is the match score. (lower is better)
 
+---
+
 ## 🚀 Future Improvements
   - Support more audio formats
   - Improved fingerprinting algorithm
   -	Enhanced UI with better toast notifications and recording indicators
   -	Optional user authentication and metadata storage
   -	Automated testing for fingerprinting and streaming
+
+---
 
 ## 🤝 Contributing
   -	Fork the repository.
