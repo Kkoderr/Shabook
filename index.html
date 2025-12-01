@@ -206,6 +206,17 @@
 </head>
 
 <body>
+
+    <div id="toastContainer" style="
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 9999;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    "></div>
+
     <canvas id="snowCanvas"></canvas>
   <div class="container">
 
@@ -234,7 +245,13 @@
       <label>Upload Audio:</label>
       <input type="file" id="audioFileFind" accept="audio/*">
 
-      <button onclick="findSong()">Find Song</button>
+      <div style="display:flex; align-items:center; gap:10px; margin-top:10px;">
+        <button onclick="findSong()">Find Song</button>
+        <button id="startStreamBtn" title="Start Recording" style="width:50px; height:40px; padding:0; border-radius:50%; display:inline-flex; justify-content:center; align-items:center;">
+            
+        </button>
+        </div>
+      <div id="streamResult"></div>
       <div id="findResult"></div>
     </div>
 
@@ -285,7 +302,7 @@
       });
 
       const result = await response.json();
-      document.getElementById('storeResult').innerText = 'Stored: ' + JSON.stringify(result);
+      showToast('Stored: ' + JSON.stringify(result), 4000);
     }
 
     /* -------- FIND SONG -------- */
@@ -307,7 +324,7 @@
       });
 
       const result = await response.json();
-      document.getElementById('findResult').innerText = 'Found: ' + JSON.stringify(result);
+      showToast(JSON.stringify(result), 4000);      
     }
 
     const canvas = document.getElementById('snowCanvas');
@@ -370,6 +387,165 @@
         requestAnimationFrame(animateSnow);
     }
     animateSnow();
-  </script>
+
+    const TARGET_SR = 11000; // must match server
+    let ws;
+    let mediaStream;
+    let audioContext;
+    let processor;
+    let audioBuffer = [];
+    let isRecording = false;
+
+    document.getElementById('startStreamBtn').onclick = async () => {
+        const btn = document.getElementById('startStreamBtn');
+
+        if (!isRecording) {
+            // Start Recording
+            isRecording = true;
+            btn.style.backgroundColor = 'rgba(255,255,255,0.8)'; // indicates recording
+            btn.style.color = '#000';
+
+            // Open WebSocket
+            ws = new WebSocket("ws://127.0.0.1:8000/stream");
+            ws.onopen = () => console.log("WebSocket connected");
+            ws.onmessage = (msg) => {
+                console.log("Server response:", msg.data);
+                showToast(msg.data, 4000); // display toast instead of setting innerText
+            };
+
+            // Get microphone
+            mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            audioContext = new AudioContext({ sampleRate: TARGET_SR });
+            const source = audioContext.createMediaStreamSource(mediaStream);
+            processor = audioContext.createScriptProcessor(4096, 1, 1);
+            source.connect(processor);
+            processor.connect(audioContext.destination);
+
+            audioBuffer = [];
+
+            processor.onaudioprocess = async (e) => {
+                const input = e.inputBuffer.getChannelData(0);
+                audioBuffer.push(new Float32Array(input));
+
+                if (audioBuffer.length >= Math.ceil(audioContext.sampleRate / 4096 * 0.5)) {
+                    const combined = mergeBuffers(audioBuffer);
+                    const wavBase64 = await floatTo16BitPCMBase64(combined, audioContext.sampleRate);
+                    ws.send(wavBase64);
+                    audioBuffer = [];
+                }
+            };
+
+        } else {
+            // Stop Recording
+            isRecording = false;
+            btn.style.backgroundColor = 'transparent';
+            btn.style.color = 'inherit';
+
+            // Stop audio processing
+            if (processor) {
+                processor.disconnect();
+                processor.onaudioprocess = null;
+            }
+            if (audioContext) audioContext.close();
+            if (mediaStream) {
+                mediaStream.getTracks().forEach(track => track.stop());
+            }
+            if (ws) ws.close();
+            audioBuffer = [];
+        }
+    };
+
+    // Merge Float32 arrays
+    function mergeBuffers(buffers) {
+        let length = buffers.reduce((sum, b) => sum + b.length, 0);
+        let result = new Float32Array(length);
+        let offset = 0;
+        for (let b of buffers) {
+            result.set(b, offset);
+            offset += b.length;
+        }
+        return result;
+    }
+
+    // Convert Float32 array to WAV base64
+    function floatTo16BitPCMBase64(float32Array, sampleRate) {
+        const buffer = new ArrayBuffer(44 + float32Array.length * 2);
+        const view = new DataView(buffer);
+
+        /* RIFF WAV header */
+        writeString(view, 0, 'RIFF');
+        view.setUint32(4, 36 + float32Array.length * 2, true);
+        writeString(view, 8, 'WAVE');
+        writeString(view, 12, 'fmt ');
+        view.setUint32(16, 16, true);
+        view.setUint16(20, 1, true);
+        view.setUint16(22, 1, true);
+        view.setUint32(24, sampleRate, true);
+        view.setUint32(28, sampleRate * 2, true);
+        view.setUint16(32, 2, true);
+        view.setUint16(34, 16, true);
+        writeString(view, 36, 'data');
+        view.setUint32(40, float32Array.length * 2, true);
+
+        // PCM samples
+        let offset = 44;
+        for (let i = 0; i < float32Array.length; i++, offset += 2) {
+            let s = Math.max(-1, Math.min(1, float32Array[i]));
+            view.setInt16(offset, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
+        }
+
+        const blob = new Blob([view], { type: 'audio/wav' });
+        return new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result.split(',')[1]);
+            reader.readAsDataURL(blob);
+        });
+    }
+
+    function writeString(view, offset, string) {
+        for (let i = 0; i < string.length; i++) {
+            view.setUint8(offset + i, string.charCodeAt(i));
+        }
+    }
+
+    function showToast(message, duration = 3000) {
+        const container = document.getElementById('toastContainer');
+
+        const toast = document.createElement('div');
+        toast.innerText = message;
+
+        // Glassy style
+        toast.style.background = 'rgba(255, 255, 255, 0.15)';
+        toast.style.backdropFilter = 'blur(10px)';
+        toast.style.border = '1px solid rgba(255,255,255,0.25)';
+        toast.style.color = '#fff';
+        toast.style.padding = '12px 18px';
+        toast.style.borderRadius = '12px';
+        toast.style.fontSize = '14px';
+        toast.style.fontWeight = '500';
+        toast.style.minWidth = '160px';
+        toast.style.boxShadow = '0 8px 20px rgba(0, 0, 0, 0.25)';
+        toast.style.opacity = '0';
+        toast.style.transition = 'opacity 0.4s ease, transform 0.4s ease';
+        toast.style.transform = 'translateY(-20px)';
+        toast.style.pointerEvents = 'none'; // clicks pass through
+
+        container.appendChild(toast);
+
+        // Animate in
+        requestAnimationFrame(() => {
+            toast.style.opacity = '1';
+            toast.style.transform = 'translateY(0)';
+        });
+
+        // Animate out and remove after duration
+        setTimeout(() => {
+            toast.style.opacity = '0';
+            toast.style.transform = 'translateY(-20px)';
+            toast.addEventListener('transitionend', () => toast.remove());
+        }, duration);
+    }
+
+</script>
 </body>
 </html>

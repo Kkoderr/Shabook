@@ -15,7 +15,7 @@ class SongUpload(BaseModel):
     file_base64: str
 
 app = FastAPI()
-CHUNK_DURATION = 5
+CHUNK_DURATION = 10
 TARGET_SR = 11000
 
 app.add_middleware(
@@ -47,6 +47,7 @@ def convert_base64_to_audio(song_base64: str):
 async def stream_audio(ws: WebSocket):
     await ws.accept()
     buffer = np.array([], dtype=np.float32)
+    audio_clip = np.array([], dtype=np.float32)
     fp = AudioFingerprint()
 
     while True:
@@ -55,15 +56,22 @@ async def stream_audio(ws: WebSocket):
         except:
             break
 
-        audio_arr, sr = convert_base64_to_audio(message)
+        try:
+            # convert using librosa from base64 audio file
+            audio_arr, sr = convert_base64_to_audio(message)
+        except Exception as e:
+            await ws.send_text(f"Error decoding audio: {str(e)}")
+            continue
+
         buffer = np.concatenate([buffer, audio_arr])
+        audio_clip = np.concatenate([audio_clip, buffer])
 
         if len(buffer) >= CHUNK_DURATION*TARGET_SR:
-            clip = buffer[:CHUNK_DURATION*TARGET_SR]
-            buffer = buffer[CHUNK_DURATION*TARGET_SR:]
+            buffer = np.array([], dtype=np.float32)  # clear temporary buffer
             fp = AudioFingerprint()
-            await ws.send_text(str(fp.find_song((clip, TARGET_SR))))
-    
+            result = fp.find_song((audio_clip, TARGET_SR))
+            await ws.send_text(str(result))
+
     await ws.close()
 
 @app.post('/store_song')
