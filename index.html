@@ -155,11 +155,40 @@
       background: rgba(255,255,255,0.3);
       color: white;
       outline: none;
+      box-sizing: border-box;
     }
 
     input[type=text]::placeholder {
       color: #eee;
       opacity: 0.8;
+    }
+
+        .custom-file-upload {
+        display: inline-block;
+        padding: 10px 18px;
+        background: rgba(255,255,255,0.25);
+        border: 1px solid var(--glass-border);
+        border-radius: 10px;
+        cursor: pointer;
+        color: #fff;
+        font-weight: 600;
+        margin-top: 10px;
+        transition: 0.25s ease;
+        backdrop-filter: blur(10px);
+        width: 100%;
+        text-align: center;
+            box-sizing: border-box;
+    }
+
+    .custom-file-upload:hover {
+        background: rgba(255,255,255,0.35);
+        border: 1px solid aliceblue;
+        color: aliceblue;
+        box-shadow: 0 8px 25px rgba(0,0,0,0.25);
+    }
+
+    .custom-file-upload input[type="file"] {
+        display: none;
     }
 
     button {
@@ -202,6 +231,10 @@
     .heading:hover{
         color: aliceblue;
     }
+    .heading a{
+        all: unset;
+        cursor: pointer;
+    }
   </style>
 </head>
 
@@ -220,7 +253,7 @@
     <canvas id="snowCanvas"></canvas>
   <div class="container">
 
-    <div class="heading"><h1>shabook</h1></div>
+    <div class="heading"><a href="https://github.com/Kkoderr/Shabook"><h1>shabook</h1></a></div>
 
     <!-- TABS -->
     <div class="tabs">
@@ -234,7 +267,10 @@
       <input type="text" id="songName" placeholder="Enter song name" autocomplete="off">
 
       <label>Upload Audio:</label>
-      <input type="file" id="audioFileStore" accept="audio/*">
+        <label class="custom-file-upload">
+          <input type="file" id="audioFileStore" accept="audio/*">
+          Choose Audio File
+      </label>
 
       <button onclick="storeSong()">Store Song</button>
       <div id="storeResult"></div>
@@ -243,12 +279,25 @@
     <!-- FIND TAB -->
     <div id="find" class="content">
       <label>Upload Audio:</label>
-      <input type="file" id="audioFileFind" accept="audio/*">
+        <label class="custom-file-upload">
+          <input type="file" id="audioFileStore" accept="audio/*">
+          Choose Audio File
+      </label>
 
       <div style="display:flex; align-items:center; gap:10px; margin-top:10px;">
         <button onclick="findSong()">Find Song</button>
         <button id="startStreamBtn" title="Start Recording" style="width:50px; height:40px; padding:0; border-radius:50%; display:inline-flex; justify-content:center; align-items:center;">
-            
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
+                 xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"
+                      stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M19 11c0 3.31-2.69 6-6 6s-6-2.69-6-6"
+                      stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M12 17v4"
+                      stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M8 21h8"
+                      stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
         </button>
         </div>
       <div id="streamResult"></div>
