@@ -1,11 +1,11 @@
-# Shabook 🎵
+# Shabook
 
 **Shabook** is a web and Python application for audio fingerprinting. It allows you to store songs and later identify them, including via live streaming from microphone input.
 The system uses **Redis** as a fast in-memory database for storing and matching audio fingerprints.
 
 ---
 
-## 🧩 Features
+## Features
 
 - **Store Songs**: Upload audio files and store them with a unique fingerprint.
 - **Find Songs (Upload)**: Upload an audio clip to identify the song.
@@ -15,7 +15,7 @@ The system uses **Redis** as a fast in-memory database for storing and matching 
 
 ---
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 - **Frontend**: HTML, JavaScript (Web Audio API, WebSocket)
 - **Backend**: Python 3, FastAPI, librosa, NumPy, Redis
@@ -23,7 +23,7 @@ The system uses **Redis** as a fast in-memory database for storing and matching 
 
 ---
 
-## 🧰 Redis Setup
+## Redis Setup
 
 Shabook uses **Redis** to store and retrieve audio fingerprints.  
 You can install Redis using Docker:
@@ -41,7 +41,7 @@ Make sure the Redis server is running before starting FastAPI.
 
 ---
 
-## ⚙️ Installation
+## Installation
 
 1. Clone the repository:
 
@@ -64,7 +64,7 @@ uvicorn app:app --reload
 
 ---
 
-## 📌 Usage
+## Usage
   - Store a Song
   	1.	Go to the Store Song tab.
   	2.	Enter the song name.
@@ -84,7 +84,7 @@ uvicorn app:app --reload
 
 ---
 
-## 📁 Project Structure
+## Project Structure
   ```bash
   /Shabook
     ├── app.py             # FastAPI backend (REST & WebSocket)
@@ -97,7 +97,7 @@ uvicorn app:app --reload
 
 ---
 
-## 💡 Example Response
+## Example Response
   Matching results are returned as a list of tuples:
   ```bash
   [('Paaro', 48.66), ('Ishq Bawla', inf), ('Sahiba', inf)]
@@ -107,7 +107,7 @@ uvicorn app:app --reload
 
 ---
 
-## 🚀 Future Improvements
+## Future Improvements
   - Support more audio formats
   - Improved fingerprinting algorithm
   -	Enhanced UI with better toast notifications and recording indicators
@@ -116,7 +116,7 @@ uvicorn app:app --reload
 
 ---
 
-## 🤝 Contributing
+## Contributing
   -	Fork the repository.
   -	Create a feature branch: git checkout -b feature/your-feature.
   -	Make changes and test locally.
