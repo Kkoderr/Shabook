@@ -1,6 +1,7 @@
 # Shabook 🎵
 
 **Shabook** is a web and Python application for audio fingerprinting. It allows you to store songs and later identify them, including via live streaming from microphone input.
+The system uses **Redis** as a fast in-memory database for storing and matching audio fingerprints.
 
 ---
 
@@ -8,6 +9,7 @@
 
 - **Store Songs**: Upload audio files and store them with a unique fingerprint.
 - **Find Songs (Upload)**: Upload an audio clip to identify the song.
+- **Redis-powered Matching** — Ultra-fast hash lookup for fingerprints  
 - **Live Streaming**: Record audio using your microphone and stream it to the server in real-time for instant identification.
 - **Cross-platform**: Works on modern browsers and a Python backend.
 
@@ -16,8 +18,26 @@
 ## 🛠️ Tech Stack
 
 - **Frontend**: HTML, JavaScript (Web Audio API, WebSocket)
-- **Backend**: Python 3, FastAPI, librosa, NumPy
+- **Backend**: Python 3, FastAPI, librosa, NumPy, Redis
 - **Others**: Base64 encoding/decoding for audio streaming
+
+---
+
+## 🧰 Redis Setup
+
+Shabook uses **Redis** to store and retrieve audio fingerprints.  
+You can install Redis using Docker:
+
+```bash
+docker run -d \
+  --name redis-shabook \
+  -p 6379:6379 \
+  redis
+```
+Or install locally:
+https://redis.io/docs/install/
+
+Make sure the Redis server is running before starting FastAPI.
 
 ---
 
