@@ -27,15 +27,18 @@
 
 ```bash
 git clone https://github.com/Kkoderr/Shabook.git
-cd Shabook```
+cd Shabook
+```
 
 2.	Install dependencies:
 ```bash
-pip install -r requirements.txt```
+pip install -r requirements.txt
+```
 
 3.	Run the FastAPI server:
 ```bash
-uvicorn app:app --reload```
+uvicorn app:app --reload
+```
 
 4.	Open index.html in a browser to access the frontend.
 
@@ -71,7 +74,8 @@ uvicorn app:app --reload```
 ## 💡 Example Response
   Matching results are returned as a list of tuples:
   ```bash
-  [('Paaro', 48.66), ('Ishq Bawla', inf), ('Sahiba', inf)]```
+  [('Paaro', 48.66), ('Ishq Bawla', inf), ('Sahiba', inf)]
+```
   
   Where the first element is the song name and the second is the match score. (lower is better)
 
