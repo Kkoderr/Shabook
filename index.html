@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Shabook Audio Fingerprint</title>
+
+  <style>
+    :root {
+      --deep-blue: #0a2540;
+      --mid-blue:  #0066cc;
+      --bright:    #00d4ff;
+      --glass: rgba(255, 255, 255, 0.15);
+      --glass-border: rgba(255, 255, 255, 0.25);
+    }
+
+    body {
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+        background: linear-gradient(135deg, var(--deep-blue) 0%, #013a6b 25%, var(--mid-blue) 60%, var(--bright) 100%);
+        display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+      color: #fff;
+    }
+
+    #snowCanvas {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: 0; /* behind all elements */
+    }
+
+    .container {
+      width: 90%;
+      max-width: 500px;
+      background: var(--glass);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--glass-border);
+      border-radius: 18px;
+      padding: 0;
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.35);
+      overflow: hidden;
+      min-height: 440px; /* Adjust based on tallest tab content */
+        display: flex;
+        flex-direction: column;
+        position: relative;
+    }
+
+    /* Bottom animated waves */
+    .container-waves {
+        position: absolute;
+        bottom: -5px;
+        left: 0;
+        width: 100%;
+        height: 80px;
+        pointer-events: none;
+        overflow: hidden;
+        z-index: 1;
+    }
+
+    .wave {
+        position: absolute;
+        width: 200%;
+        height: 100%;
+        bottom: 0;
+        background-repeat: repeat-x;
+        background-size: 50% 100%;
+        animation: waveMove 8s linear infinite;
+        opacity: 0.6;
+    }
+
+    /* front wave */
+    .wave.front {
+        background-image: url("data:image/svg+xml,%3Csvg width='1200' height='200' xmlns='http://www.w3.org/2000/svg'%3E%3ClinearGradient id='g1' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0%' stop-color='rgba(255,140,0,0.85)'/%3E%3Cstop offset='100%' stop-color='rgba(255,90,0,0.6)'/%3E%3C/linearGradient%3E%3Cpath d='M0 100 Q150 50 300 100 T600 100 T900 100 T1200 100 V200 H0 Z' fill='url(%23g1)'/%3E%3C/svg%3E");
+    }
+
+    /* back wave */
+    .wave.back {
+        background-image: url("data:image/svg+xml,%3Csvg width='1200' height='200' xmlns='http://www.w3.org/2000/svg'%3E%3ClinearGradient id='g2' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0%' stop-color='rgba(255,220,0,0.65)'/%3E%3Cstop offset='100%' stop-color='rgba(255,180,0,0.45)'/%3E%3C/linearGradient%3E%3Cpath d='M0 110 Q150 70 300 110 T600 110 T900 110 T1200 110 V200 H0 Z' fill='url(%23g2)'/%3E%3C/svg%3E");
+        animation: waveMove2 12s linear infinite;
+    }
+
+    @keyframes waveMove {
+        0% { transform: translateX(0); }
+        100% { transform: translateX(-50%); }
+    }
+
+    @keyframes waveMove2 {
+        0% { transform: translateX(0); }
+        50% { transform: translateX(-25%) translateY(4px); }
+        100% { transform: translateX(-50%) translateY(0); }
+    }
+
+    /* ------- TABS -------- */
+    .tabs {
+      display: flex;
+      width: 100%;
+      background: rgba(255,255,255,0.1);
+      border-bottom: 1px solid rgba(255,255,255,0.2);
+    }
+
+    .tab {
+      width: 50%;
+      text-align: center;
+      padding: 14px 0;
+      cursor: pointer;
+      font-weight: 600;
+      transition: 0.25s;
+      color: #b8e3ff;
+    }
+    .tab:hover{
+        color: #fff;
+        background: rgba(255,255,255,0.25);
+        backdrop-filter: blur(10px);
+    }
+
+    .tab.active {
+        position: relative;
+        color: #003c5f;
+        background: linear-gradient(90deg,
+        rgba(255,140,0,0.70),
+        rgba(255,200,0,0.60)
+        );
+        backdrop-filter: blur(12px);
+        border-bottom: 2px solid rgba(255,255,255,0.8);
+    }
+
+    /* Content area */
+    .content {
+      padding: 25px;
+      display: none;
+    }
+
+    .content.active {
+      display: block;
+    }
+
+    label {
+      display: block;
+      margin-top: 16px;
+      font-size: 14px;
+      opacity: 0.95;
+    }
+
+    input[type=text], input[type=file] {
+      width: 100%;
+      padding: 10px;
+      margin-top: 6px;
+      border-radius: 8px;
+      border: none;
+      background: rgba(255,255,255,0.3);
+      color: white;
+      outline: none;
+    }
+
+    input[type=text]::placeholder {
+      color: #eee;
+      opacity: 0.8;
+    }
+
+    button {
+      width: 100%;
+      margin-top: 20px;
+      padding: 12px;
+      border-radius: 999px;
+      border: 1px solid var(--glass-border);
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 15px;
+      color: var(--glass-border) ;
+      background: transparent;
+      transition: 0.2s ease;
+      margin-bottom: 40px;
+    }
+
+    button:hover {
+      scale: 1.01;
+      box-shadow: 0 8px 28px rgba(0, 160, 255, 0.45);
+      background: transparent;
+      color: aliceblue ;
+      border: 1px solid aliceblue;
+    }
+
+    #result {
+      margin-top: 20px;
+      padding: 15px;
+      background: rgba(255,255,255,0.2);
+      border-radius: 10px;
+      font-size: 14px;
+      word-break: break-all;
+    }
+
+    .heading{
+        text-align: center;
+        border-bottom: 1px solid var(--glass-border);
+        color:  rgba(255, 255, 255, 0.75);
+    }
+    .heading:hover{
+        color: aliceblue;
+    }
+  </style>
+</head>
+
+<body>
+    <canvas id="snowCanvas"></canvas>
+  <div class="container">
+
+    <div class="heading"><h1>shabook</h1></div>
+
+    <!-- TABS -->
+    <div class="tabs">
+      <div class="tab active" onclick="switchTab('store')">Store Song</div>
+      <div class="tab" onclick="switchTab('find')">Find Song</div>
+    </div>
+
+    <!-- STORE TAB -->
+    <div id="store" class="content active">
+      <label>Song Name:</label>
+      <input type="text" id="songName" placeholder="Enter song name" autocomplete="off">
+
+      <label>Upload Audio:</label>
+      <input type="file" id="audioFileStore" accept="audio/*">
+
+      <button onclick="storeSong()">Store Song</button>
+      <div id="storeResult"></div>
+    </div>
+
+    <!-- FIND TAB -->
+    <div id="find" class="content">
+      <label>Upload Audio:</label>
+      <input type="file" id="audioFileFind" accept="audio/*">
+
+      <button onclick="findSong()">Find Song</button>
+      <div id="findResult"></div>
+    </div>
+
+    <div class="container-waves">
+        <div class="wave back"></div>
+        <div class="wave front"></div>
+    </div>
+
+  </div>
+
+  <script>
+    /* -------- TAB SWITCHING -------- */
+    function switchTab(tabName) {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.content').forEach(c => c.classList.remove('active'));
+
+      document.querySelector(`.tab[onclick="switchTab('${tabName}')"]`).classList.add('active');
+      document.getElementById(tabName).classList.add('active');
+    }
+
+    /* ------- FILE TO BASE64 -------- */
+    function readFileAsBase64(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result.split(',')[1]);
+        reader.onerror = error => reject(error);
+        reader.readAsDataURL(file);
+      });
+    }
+
+    /* -------- STORE SONG -------- */
+    async function storeSong() {
+      const fileInput = document.getElementById('audioFileStore');
+      const songName = document.getElementById('songName').value;
+
+      if (!fileInput.files[0] || !songName) {
+        alert('Enter song name and choose a file!');
+        return;
+      }
+
+      const base64Data = await readFileAsBase64(fileInput.files[0]);
+      const payload = { song_name: songName, file_base64: base64Data };
+
+      const response = await fetch('http://127.0.0.1:8000/store_song', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      const result = await response.json();
+      document.getElementById('storeResult').innerText = 'Stored: ' + JSON.stringify(result);
+    }
+
+    /* -------- FIND SONG -------- */
+    async function findSong() {
+      const fileInput = document.getElementById('audioFileFind');
+
+      if (!fileInput.files[0]) {
+        alert('Upload a file to identify!');
+        return;
+      }
+
+      const base64Data = await readFileAsBase64(fileInput.files[0]);
+      const payload = { song_name: 'query', file_base64: base64Data };
+
+      const response = await fetch('http://127.0.0.1:8000/find_song_details', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      const result = await response.json();
+      document.getElementById('findResult').innerText = 'Found: ' + JSON.stringify(result);
+    }
+
+    const canvas = document.getElementById('snowCanvas');
+    const ctx = canvas.getContext('2d');
+
+    let snowflakes = [];
+    const numFlakes = 80;
+
+    function resizeCanvas() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    function initSnow() {
+        snowflakes = [];
+        for (let i = 0; i < numFlakes; i++) {
+            snowflakes.push({
+                x: Math.random() * canvas.width,
+                y: Math.random() * canvas.height,
+                r: Math.random() * 3 + 1,
+                d: Math.random() * numFlakes,
+                sway: Math.random() * 0.1 // horizontal sway speed
+            });
+        }
+    }
+    initSnow();
+
+    function drawSnow() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = 'rgba(255,255,255,0.8)';
+        ctx.beginPath();
+        for (let i = 0; i < snowflakes.length; i++) {
+            let f = snowflakes[i];
+            ctx.moveTo(f.x, f.y);
+            ctx.arc(f.x, f.y, f.r, 0, Math.PI * 2, true);
+        }
+        ctx.fill();
+        moveSnow();
+    }
+
+    let angle = 0;
+    function moveSnow() {
+        angle += 0.001; // slower sway
+        for (let i = 0; i < snowflakes.length; i++) {
+            let f = snowflakes[i];
+            f.y += 0.05 + f.r / 8; // slower fall
+            f.x += Math.sin(angle + f.d) * f.sway; // gentle horizontal sway
+
+            if (f.y > canvas.height) {
+                f.y = -5;
+                f.x = Math.random() * canvas.width;
+            }
+        }
+    }
+
+    function animateSnow() {
+        drawSnow();
+        requestAnimationFrame(animateSnow);
+    }
+    animateSnow();
+  </script>
+</body>
+</html>

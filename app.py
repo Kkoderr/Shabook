@@ -1,4 +1,5 @@
 from fastapi import FastAPI, WebSocket
+from fastapi.middleware.cors import CORSMiddleware
 from fingerprint import AudioFingerprint
 from pydantic import BaseModel
 import base64
@@ -16,6 +17,14 @@ class SongUpload(BaseModel):
 app = FastAPI()
 CHUNK_DURATION = 5
 TARGET_SR = 11000
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"]
+)
 
 def load_song(file_names):
         songs = []
@@ -69,7 +78,7 @@ def find_song(song: SongUpload):
     audio, sr = convert_base64_to_audio(song.file_base64)
     fp = AudioFingerprint()
     response = fp.find_song((audio, sr))
-    return {'response': response}
+    return {'response': str(response)}
 
 def helper(song_filenames):
     songs = load_song(song_filenames)
