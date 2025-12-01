@@ -15,7 +15,7 @@ class SongUpload(BaseModel):
     file_base64: str
 
 app = FastAPI()
-CHUNK_DURATION = 10
+CHUNK_DURATION = 1.8
 TARGET_SR = 11000
 
 app.add_middleware(
@@ -49,6 +49,8 @@ async def stream_audio(ws: WebSocket):
     buffer = np.array([], dtype=np.float32)
     audio_clip = np.array([], dtype=np.float32)
     fp = AudioFingerprint()
+    ROLLING_DURATION = 5.0   # seconds
+    ROLLING_SIZE = int(ROLLING_DURATION * TARGET_SR)
 
     while True:
         try: 
@@ -64,11 +66,12 @@ async def stream_audio(ws: WebSocket):
             continue
 
         buffer = np.concatenate([buffer, audio_arr])
-        audio_clip = np.concatenate([audio_clip, buffer])
+        audio_clip = np.concatenate([audio_clip, audio_arr])
+        if len(audio_clip) > ROLLING_SIZE:
+            audio_clip = audio_clip[-ROLLING_SIZE:]
 
         if len(buffer) >= CHUNK_DURATION*TARGET_SR:
-            buffer = np.array([], dtype=np.float32)  # clear temporary buffer
-            fp = AudioFingerprint()
+            buffer = np.array([], dtype=np.float32)
             result = fp.find_song((audio_clip, TARGET_SR))
             await ws.send_text(str(result))
 
